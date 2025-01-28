@@ -28,7 +28,6 @@ class UserController {
       return handleServerError(res,"Please provide a valid email address",Constants.HTTPBADREQUEST);
     }else{
       const loginUserDetails=await UserService.loginUser({email,password});
-      //console.log(loginUserDetails); 
       loginUserDetails? handelLogin(res,loginUserDetails): handelDataNotFound(res);
     }
   }

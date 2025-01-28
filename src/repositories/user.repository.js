@@ -1,8 +1,5 @@
 import prisma from "../config/prismaclient.config.js"; 
 import { supabase } from "../config/supabaseclient.config.js";
-import ApiError from "../utils/apierror.utils.js";
-import { Constants } from "../utils/constant.utils.js";
-
 class UserRepository {
 
   static async savedUserDetailsToSupbase(userDetails){
@@ -16,11 +13,6 @@ class UserRepository {
       }
     })
     return {data,error};
-    if(error){
-      throw new ApiError(Constants.HTTPINTERNALSERVERERROR,Constants.FAILED_STATUS,error.message);
-    }else{
-      return data;
-    }
   }
 
   static async createUserDetails(userDetails){
