@@ -6,31 +6,29 @@ import { handelDataNotFound, handelLogin, handelServerDataCreated, handelServerD
 class UserController {
 
   static async createUserDetails(req,res){
-      const {userName,userEmail,userPassword}=req.body;
-      if(!userName || !userEmail || !userPassword){
+      const {fullName,email,password}=req.body;
+      if(!fullName || !email || !password){
         throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Please provide all the required fields");
       }
-      if(!userEmail.includes("@") || !userEmail.includes(".")){
+      if(!email.includes("@") || !email.includes(".")){
         throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Please provide a valid email address");
-      }else if(typeof userName !== "string" || userName==="" || userName===undefined){
-        throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Please provide a valid username");
+      }else if(typeof fullName !== "string" || fullName==="" || fullName===undefined){
+        throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Please provide a valid name");
       }else{
-        const createUserDetails=await UserService.createUserDetails({userName,userEmail,userPassword});
+        const createUserDetails=await UserService.createUserDetails({fullName,email,password});
         createUserDetails? handelServerDataCreated(res,createUserDetails): handelDataInvalid(res);
       }
   }
 
   static async loginUser(req,res){
-    const {userEmail,userPassword}=req.body;
-    if(!userEmail || !userPassword){
+    const {email,password}=req.body;
+    if(!email || !password){
       return handleServerError(res,"Please provide all the required fields",Constants.HTTPBADREQUEST);
-    }else if(!userEmail.includes("@") || !userEmail.includes(".")){
+    }else if(!email.includes("@") || !email.includes(".")){
       return handleServerError(res,"Please provide a valid email address",Constants.HTTPBADREQUEST);
     }else{
-      const loginUserDetails=await UserService.loginUser({userEmail,userPassword}); 
-      if(loginUserDetails){
-        req.session.user=loginUserDetails;
-      }
+      const loginUserDetails=await UserService.loginUser({email,password});
+      //console.log(loginUserDetails); 
       loginUserDetails? handelLogin(res,loginUserDetails): handelDataNotFound(res);
     }
   }

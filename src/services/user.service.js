@@ -5,26 +5,31 @@ import PasswordHasher from "../utils/passwordhashing.utils.js";
 class UserService {
 
     static async createUserDetails(userDetails){
-        const{userPassword,...otherUserDetails}=userDetails;
-        const hashedPassword=await PasswordHasher.hashPassword(userPassword);
-        const createUserDetails=await UserRepository.createUserDetails({...otherUserDetails,userPassword:hashedPassword});
-        return createUserDetails;
+        const {data,error}= await UserRepository.savedUserDetailsToSupbase(userDetails);
+        if(error){
+            throw new ApiError(Constants.HTTPINTERNALSERVERERROR,Constants.FAILED_STATUS,error.message);
+        }else{
+            const createUserDetails=await UserRepository.createUserDetails({
+                fullName:data.user.user_metadata.display_name,
+                email:data.user.email,
+                userId:data.user.id
+            });
+            return createUserDetails;
+        }
+        
     }
 
     static async loginUser(userDetails){
-        const {userEmail,userPassword}=userDetails;
-        const getUserDetails=await UserRepository.getUserDetailsByUserEmail(userEmail);
-        if(!getUserDetails){
-            return null;
+        const {email,password}=userDetails;
+        const getUserDetails=await UserRepository.getUserDetailsByUserEmail(email);
+        const {data,error}=await UserRepository.signInWithSupbase(email,password);
+        if(data?.user?.id !== getUserDetails.userId){
+            throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Invalid user");
+        }else if(error){
+            throw new ApiError(Constants.HTTPINTERNALSERVERERROR,Constants.FAILED_STATUS,error.message);
         }else{
-            const isMatchedPassword=await PasswordHasher.verifyPassword(userPassword,getUserDetails.userPassword);
-            if(!isMatchedPassword){
-                throw new ApiError(Constants.HTTPBADREQUEST,Constants.FAILED_STATUS,"Invalid Password");
-            }else{
-                const {userPassword,...otherUserDetails}=getUserDetails;
-                return otherUserDetails;
-            }
-        }
+            return {token:data.session.access_token,user:getUserDetails};
+        }    
     }
 
     static async getAllUsers(page,limit){

@@ -1,21 +1,50 @@
 import prisma from "../config/prismaclient.config.js"; 
+import { supabase } from "../config/supabaseclient.config.js";
+import ApiError from "../utils/apierror.utils.js";
+import { Constants } from "../utils/constant.utils.js";
 
 class UserRepository {
 
+  static async savedUserDetailsToSupbase(userDetails){
+    const {data,error}=await supabase.auth.signUp({
+      email:userDetails.email,
+      password:userDetails.password,
+      options:{
+        data:{
+          display_name:userDetails.fullName
+        }
+      }
+    })
+    return {data,error};
+    if(error){
+      throw new ApiError(Constants.HTTPINTERNALSERVERERROR,Constants.FAILED_STATUS,error.message);
+    }else{
+      return data;
+    }
+  }
+
   static async createUserDetails(userDetails){
-    const createUserDetails=await prisma.user.create({
+    const createUserDetails=await prisma.candidates.create({
       data:userDetails
     });
     return createUserDetails;
   }
 
-  static async getUserDetailsByUserEmail(userEmail){
-    const getUserDetails=await prisma.user.findFirst({
+  static async getUserDetailsByUserEmail(email){
+    const getUserDetails=await prisma.candidates.findFirst({
       where:{
-        userEmail
+        email
       }
     });
     return getUserDetails;
+  }
+
+  static async signInWithSupbase(email,password){
+    const {data,error}=await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return {data,error};
   }
 
   static async getAllUsers(page,limit){

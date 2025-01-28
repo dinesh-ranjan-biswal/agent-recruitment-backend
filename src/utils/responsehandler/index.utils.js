@@ -139,11 +139,11 @@ const handelLogin = (res, user) => {
   const users = {
     userId: user?.id
   };
-  const authToken = jwt.sign(users, process.env.JWT_SECRET_KEY, {
-    expiresIn: "30d"
-  });
+//   const authToken = jwt.sign(users, process.env.JWT_SECRET_KEY, {
+//     expiresIn: "30d"
+//   });
     const response = createResponse(
-        { authToken, user },
+        user,
         Constants.HTTPOK,
         Constants.SUCCESS_STATUS,
         Constants.LOGIN_SUCCESS_MESSAGE

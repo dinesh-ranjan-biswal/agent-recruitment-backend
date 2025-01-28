@@ -1,10 +1,98 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
+  //previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["HR-Copilot"]
+  //schemas  = ["agent_recruitment"]
+}
+
+enum SubmissionStatusEnum {
+  created
+  in_progress
+  submitted
+  ai_review
+  technical_review
+  feedback_ready
+  completed
+
+  //@@schema("agent_recruitment")
+}
+
+enum RoundStatusEnum {
+  in_progress
+  completed
+  discontinued
+
+  //@@schema("agent_recruitment")
+}
+
+model Candidates {
+  id                      String                     @id @default(uuid())
+  fullName                String                     @map("full_name")
+  email                   String                     @unique
+  userId                  String?                    @unique @map("user_id")
+  createdAt               DateTime                   @default(now()) @map("created_at")
+  updatedAt               DateTime                   @default(now()) @map("updated_at")
+  profileData             Json?                      @map("profile_data")
+  notificationPreferences Json                       @default("{\"email\":true,\"browser\":false,\"mobile\":false}") @map("notification_preferences")
+  assessmentRounds        CandidateAssessmentRound[]
+
+  @@index([email], name: "idx_candidates_email")
+  @@map("candidates")
+}
+
+model Assessments {
+  id                        String                     @id @default(uuid())
+  title                     String
+  jobRole                   String                     @map("job_role")
+  roundConfig               Json                       @map("round_config")
+  numOfRounds               Int                        @map("num_of_rounds")
+  isActive                  Boolean                    @map("is_active")
+  createdBy                 String?                    @map("created_by")
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+  updatedAt                 DateTime                   @default(now()) @map("updated_at")
+  candidateAssessmentRounds CandidateAssessmentRound[]
+
+  @@index([jobRole], name: "idx_assessment_rounds_job_role")
+  @@index([isActive], name: "idx_assessment_rounds_active")
+  @@map("assessments")
+}
+
+model CandidateAssessmentRound {
+  id                    String                 @id @default(uuid())
+  candidateId           String
+  assessmentRoundsId    String
+  roundCode             String                 @unique
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  currentRound          Int                    @default(1)
+  status                RoundStatusEnum        @default(in_progress)
+  assessmentRoundData   Json                   @default("{}")
+  candidate             Candidates             @relation(fields: [candidateId], references: [id])
+  assessment            Assessments            @relation(fields: [assessmentRoundsId], references: [id])
+  assessmentSubmissions AssessmentSubmission[]
+
+  @@index([candidateId], name: "idx_journey_candidate")
+  @@map("candidate_assessment_rounds")
+}
+
+model AssessmentSubmission {
+  id                       String                   @id @default(uuid())
+  roundId                  String
+  roundNumber              Int
+  attemptNumber            Int
+  submissionCode           String                   @unique
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  status                   SubmissionStatusEnum     @default(created)
+  submissionData           Json                     @default("{}")
+  reviewStatus             Json                     @default("{\"current_stage\": \"created\", \"stages\": {\"submitted\": null, \"ai_review\": null, \"technical_review\": null, \"feedback_preparation\": null, \"completed\": null}, \"expected_completion\": null}")
+  candidateAssessmentRound CandidateAssessmentRound @relation(fields: [roundId], references: [id])
+
+  @@unique([roundId, roundNumber, attemptNumber], name: "idx_unique_submission_attempt")
+  @@index([roundId], name: "idx_submissions_round")
+  @@map("assessment_submissions")
 }
