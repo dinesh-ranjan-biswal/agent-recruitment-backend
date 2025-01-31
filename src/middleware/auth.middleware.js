@@ -1,31 +1,34 @@
-import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken'; //* Import the entire CommonJS module
-import {Constants} from '../utils/constant.utils.js';
-import logger from '../utils/logger.utils.js';
-import { handelUnauthorized, handleServerError } from '../utils/responsehandler/index.utils.js';
-dotenv.config();
-const { verify } = jwt; //* Destructure the `verify` function from the imported module
+import { supabase } from "../config/supabaseclient.config.js";
+import ApiError from "../utils/apierror.utils.js";
+import { Constants } from "../utils/constant.utils.js";
 
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.header("Authorization");
+// Middleware for authentication
+const authenticateUser = async (req, _, next) => {
+  try {
+    const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return handelUnauthorized(res);
-  }
-
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7)
-    : authHeader;
-
-  verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
-    if (err) {
-      logger.error(err);
-      return handleServerError(res, err, Constants.HTTPFORBIDDEN);
+    // Ensure the token is present
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new ApiError(Constants.UNAUTHORIZED,Constants.FAILED_STATUS,"Authorization token is missing or invalid");
     }
 
-    req.user = user;
-    next();
-  });
+    const token = authHeader.split(' ')[1]; // Extract the token
+
+    // Verify the token using Supabase
+    const { data: user, error } = await supabase.auth.getUser(token);
+    
+
+    if (error || !user) {
+      throw new ApiError(Constants.UNAUTHORIZED,Constants.FAILED_STATUS,"Invalid or expired token");
+    }
+
+    // Attach user info to the request object for further use
+    req.user = user.user;
+
+    next(); // Move to the next middleware or route handler
+  } catch (err) {
+    throw new ApiError(Constants.HTTPINTERNALSERVERERROR,Constants.FAILED_STATUS,err.message|| "Internal server error");
+  }
 };
 
-export default authenticateToken;
+export default authenticateUser;

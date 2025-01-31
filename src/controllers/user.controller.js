@@ -1,7 +1,7 @@
 import UserService from "../services/user.service.js";
 import ApiError from "../utils/apierror.utils.js";
 import  {Constants}  from "../utils/constant.utils.js";
-import { handelDataNotFound, handelLogin, handelServerDataCreated, handelServerDataGet, handelServerSuccess, handleServerError } from "../utils/responsehandler/index.utils.js";
+import { handelDataNotFound, handelLogin, handelServerDataCreated, handelServerDataGet, handelServerSuccess, handleCustomErrorResponse, handleServerError, handleSuccessCustomResponse } from "../utils/responsehandler/index.utils.js";
 
 class UserController {
 
@@ -62,6 +62,11 @@ class UserController {
       updatedUserDetails? handelServerSuccess(res,updatedUserDetails,Constants.DATA_UPDATE_SUCCESS_MESSAGE): handelDataNotFound(res);
     }
   }
+
+  static async signoutUser(req,res){
+    const getLogoutUserStatus=await UserService.signoutUser();
+    getLogoutUserStatus?  handleSuccessCustomResponse(res,"User logged out successfully") : handleCustomErrorResponse(res,Constants.HTTPINTERNALSERVERERROR,"Failed to log out user")
+}
 }
 
 export default UserController;

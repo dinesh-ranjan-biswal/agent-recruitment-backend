@@ -109,6 +109,14 @@ class UserRepository {
     });
     return updatedUserDetails;
   }
+
+  static async signoutUser(){
+    const {error}=await supabase.auth.signOut({scope:"global"});
+    if(error){
+      return error;
+    }
+    return null;
+  }
   
 }
 

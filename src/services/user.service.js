@@ -53,6 +53,11 @@ class UserService {
         return updatedUserDetails;   
     }
 
+    static async signoutUser(){
+        const error=await UserRepository.signoutUser();
+        return !error
+        
+    }
 }
 
 export default UserService;
